@@ -65,19 +65,13 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   RTCP_SINK_V=rtcp_sink;
 
 
-
-
-  /* the pipelineVC to hold everything */
   pipelineVC = gst_pipeline_new ("Client");
   g_assert (pipelineVC);
 
 
-  //Video
-  /* the udp src and source we will use for RTP and RTCP */
   rtpvsrc = gst_element_factory_make ("udpsrc", "rtpvsrc");
   g_assert (rtpvsrc);
   g_object_set (rtpvsrc, "port", RTP_SRC_V, NULL);
-  /* we need to set caps on the udpsrc for the RTP data */
   caps = gst_caps_from_string (VIDEO_CAPS);
   g_object_set (rtpvsrc, "caps", caps, NULL);
   gst_caps_unref (caps);
@@ -89,7 +83,6 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   rtcpvsink = gst_element_factory_make ("udpsink", "rtcpvsink");
   g_assert (rtcpvsink);		
   g_object_set (rtcpvsink, "port", RTCP_SINK_V, "host", DEST_HOST, NULL);
-  /* no need for synchronisation or preroll on the RTCP sink */
   g_object_set (rtcpvsink, "async", FALSE, "sync", FALSE, NULL);
 
 
@@ -101,13 +94,11 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   g_assert (videodepay);
   videodec = gst_element_factory_make ("vp8dec", "videodec");
   g_assert (videodec);
-  /* the audio playback and format conversion */
   videosink = gst_element_factory_make ("xvimagesink", "videosink");
   g_assert (videosink);
   g_object_set(videosink,"sync",FALSE,NULL);
   queue = gst_element_factory_make ("queue","queue");
   g_assert(queue);
-  //g_object_set(queue,"leaky",1,NULL);
 
   /* add depayloading and playback to the pipelineVC and link */
   gst_bin_add_many (GST_BIN (pipelineVC), videodepay,queue, videodec, videosink, NULL);
@@ -129,14 +120,13 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
 
 
   //Video
-  // now link all to the rtpbin, start by getting an RTP sinkpad for session 0 
   srcpad = gst_element_get_static_pad (rtpvsrc, "src");
   sinkpad = gst_element_get_request_pad (rtpbin, "recv_rtp_sink_1");
   lres = gst_pad_link (srcpad, sinkpad);
   g_assert (lres == GST_PAD_LINK_OK);
   gst_object_unref (srcpad);
 
-  // get an RTCP sinkpad in session 0 
+  // RTCP sinkpad in session 1 
   srcpad = gst_element_get_static_pad (rtcpvsrc, "src");
   sinkpad = gst_element_get_request_pad (rtpbin, "recv_rtcp_sink_1");
   lres = gst_pad_link (srcpad, sinkpad);
@@ -144,7 +134,7 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   gst_object_unref (srcpad);
   gst_object_unref (sinkpad);
 
-  // get an RTCP srcpad for sending RTCP back to the sender 
+  // RTCP srcpad for sending RTCP 
   srcpad = gst_element_get_request_pad (rtpbin, "send_rtcp_src_1");
   sinkpad = gst_element_get_static_pad (rtcpvsink, "sink");
   lres = gst_pad_link (srcpad, sinkpad);
@@ -160,24 +150,10 @@ gint client_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   
   
 
-  /* the RTP pad that we have to connect to the depayloader will be created
-   * dynamically so we connect to the pad-added signal, pass the depayloader as
-   * user_data so that we can link to it. */
   g_signal_connect (rtpbin, "pad-added", G_CALLBACK (pad_added_cb), NULL);
 
   
-  /* set the pipelineVC to playing */
   g_print ("starting receiver pipelineVC\n");
-  
-
-  /* we need to run a GLib main loop to get the messages */
-  //loop = g_main_loop_new (NULL, FALSE);
-  //g_main_loop_run (loop);
-
-  //g_print ("stopping receiver pipelineVC\n");
-  //gst_element_set_state (pipelineVC, GST_STATE_NULL);
-
-  //gst_object_unref (pipelineVC);
 
   return 0;
 }

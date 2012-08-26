@@ -22,7 +22,7 @@ GtkEntry *port,*portC;
 char *filename;
 gboolean stream_on;
 
-GstElement *pipelineVideo,*pipelineVC;
+GstElement *pipelineVideo,*pipelineVC,*pipelineAudio,*pipelineAC;
 GMainLoop *loopCl,*loopSv;
 
 GThread   *thread;

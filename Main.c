@@ -35,6 +35,10 @@ int rtp_src_v, rtcp_src_v,rtcp_sink_v;
 int rtp_src_v_c, rtcp_src_v_c,rtcp_sink_v_c;
 int mutex=0;
 
+int rtp_src_a, rtcp_src_a,rtcp_sink_a;
+int rtp_src_a_c, rtcp_src_a_c,rtcp_sink_a_c;
+
+
 gint delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
   return(FALSE);
@@ -60,9 +64,9 @@ thread_func( gpointer data )
        
 	mutex++;
         client_video_stream(rtp_src_v_c, rtcp_src_v_c,rtcp_sink_v_c);
-	//loopCl = g_main_loop_new (NULL, FALSE);
-        //g_main_loop_run (loopCl);
+        client_audio_stream(rtp_src_a_c, rtcp_src_a_c,rtcp_sink_a_c);	
 	gst_element_set_state (pipelineVC, GST_STATE_PLAYING);
+	gst_element_set_state (pipelineAC, GST_STATE_PLAYING);
         }
     }
 
@@ -80,14 +84,23 @@ void on_click(GtkWidget *widget, gpointer data) {
    rtp_src_v=atoi(text);
    rtcp_src_v=rtp_src_v+1;
    rtcp_sink_v=rtp_src_v+4;
+   rtp_src_a=atoi(text)+100;
+   rtcp_src_v=rtp_src_v+101;
+   rtcp_sink_v=rtp_src_v+104;
+   
       const gchar *textC = gtk_entry_get_text( portC );
    rtp_src_v_c=atoi(textC);
    rtcp_src_v_c=rtp_src_v_c+1;
    rtcp_sink_v_c=rtp_src_v_c+4;
+  rtp_src_a_c=atoi(textC)+100;
+   rtcp_src_a_c=rtp_src_v_c+101;
+   rtcp_sink_a_c=rtp_src_v_c+104;
 
    server_video_stream(rtp_src_v, rtcp_src_v,rtcp_sink_v);
+   server_audio_stream(rtp_src_a, rtcp_src_a,rtcp_sink_a);
    
 	gst_element_set_state (pipelineVideo, GST_STATE_PLAYING);
+	gst_element_set_state (pipelineAudio, GST_STATE_PLAYING);
    /*gdk_threads_enter();
    if(!g_thread_create( thread_func, NULL,FALSE, &t_error ))
     {
@@ -101,10 +114,9 @@ void on_click(GtkWidget *widget, gpointer data) {
 
 
 int main(int argc, char *argv[]) {
-     gdk_threads_init();
 
-    /* Obtain gtk's global lock */
-    
+
+     gdk_threads_init();
 
     /* Do stuff as usual */
     gtk_init( &argc, &argv );
@@ -174,8 +186,6 @@ if(!g_thread_create( thread_func, NULL,FALSE, &t_error ))
 
     gtk_widget_show_all(window);
     gdk_threads_enter();
-    //loopSv = g_main_loop_new (NULL, FALSE);
-    //g_main_loop_run (loopSv);
    
     gtk_main();
     

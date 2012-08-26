@@ -54,7 +54,6 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   RTCP_SINK_V=rtcp_sink;
 
 
-  /* the pipeline to hold everything */
   pipelineVideo = gst_pipeline_new ("Server");
   g_assert (pipelineVideo);
 
@@ -106,7 +105,6 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   g_assert (videopay);
   //g_object_set(videopay,"max-ptime",10,NULL);
 
-  /* add capture and payloading to the pipeline and link */
   gst_bin_add_many (GST_BIN (pipelineVideo), videosrc,ffmpeg,capsfilter,tee,videopay,NULL);
 
   if (!gst_element_link_many (videosrc,ffmpeg,capsfilter,tee,NULL)) {
@@ -190,7 +188,6 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   gst_bin_add (GST_BIN (pipelineVideo), rtpbin);
 
   //Video
-  // the udp sinks and source we will use for RTP and RTCP 
   rtpvsink = gst_element_factory_make ("udpsink", "rtpvsink");
   g_assert (rtpvsink);
   g_object_set (rtpvsink, "port", RTP_SRC_V, "host", DEST_HOST, "sync",FALSE,NULL);
@@ -198,7 +195,6 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   rtcpvsink = gst_element_factory_make ("udpsink", "rtcpvsink");
   g_assert (rtcpvsink);
   g_object_set (rtcpvsink, "port", RTCP_SRC_V, "host", DEST_HOST, NULL);
-  // no need for synchronisation or preroll on the RTCP sink 
   g_object_set (rtcpvsink, "async", FALSE, "sync", FALSE, NULL);
 
   rtcpvsrc = gst_element_factory_make ("udpsrc", "rtcpvsrc");
@@ -214,15 +210,14 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
 
  
   //Video
-  // now link all to the rtpbin, start by getting an RTP sinkpad for session 0 
+  // RTP sinkpad for session 0 
   sinkpad = gst_element_get_request_pad (rtpbin, "send_rtp_sink_1");
   srcpad = gst_element_get_static_pad (videopay, "src");
   if (gst_pad_link (srcpad, sinkpad) != GST_PAD_LINK_OK)
     g_error ("Failed to link video payloader to rtpbin");
   gst_object_unref (srcpad);
 
-  // get the RTP srcpad that was created when we requested the sinkpad above and
-  //  link it to the rtpsink sinkpad
+  // RTP srcpad 
   srcpad = gst_element_get_static_pad (rtpbin, "send_rtp_src_1");
   sinkpad = gst_element_get_static_pad (rtpvsink, "sink");
   if (gst_pad_link (srcpad, sinkpad) != GST_PAD_LINK_OK)
@@ -230,34 +225,19 @@ gint server_video_stream(int rtp_src,int rtcp_src,int rtcp_sink)
   gst_object_unref (srcpad);
   gst_object_unref (sinkpad);
 
-  // get an RTCP srcpad for sending RTCP to the receiver 
+  // RTCP srcpad for sending RTCP to the receiver 
   srcpad = gst_element_get_request_pad (rtpbin, "send_rtcp_src_1");
   sinkpad = gst_element_get_static_pad (rtcpvsink, "sink");
   if (gst_pad_link (srcpad, sinkpad) != GST_PAD_LINK_OK)
     g_error ("Failed to link rtpbin to rtcpvsink");
   gst_object_unref (sinkpad);
 
-  // we also want to receive RTCP, request an RTCP sinkpad for session 0 and
-  //  link it to the srcpad of the udpsrc for RTCP 
+  // request an RTCP sinkpad for session 1 
   srcpad = gst_element_get_static_pad (rtcpvsrc, "src");
   sinkpad = gst_element_get_request_pad (rtpbin, "recv_rtcp_sink_1");
   if (gst_pad_link (srcpad, sinkpad) != GST_PAD_LINK_OK)
     g_error ("Failed to link rtcpvsrc to rtpbin");
   gst_object_unref (srcpad);
-
-
-
-
-  /* set the pipelineVideo to playing */
-  g_print ("starting sender pipelineVideo\n");
-  
-
-  /* we need to run a GLib main loop to get the messages */
-  //loop = g_main_loop_new (NULL, FALSE);
-  //g_main_loop_run (loop);
-
-  g_print ("stopping sender pipelineVideo\n");
- // gst_element_set_state (pipelineVideo, GST_STATE_NULL);
 
   return 0;
 }

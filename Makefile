@@ -12,11 +12,11 @@ GTK_CFLAGS=`pkg-config --cflags gtk+-2.0 gthread-2.0`
 
 CFLAGS=-ggdb $(EXTRA_WARNINGS)
 
-BINS=gst-player
+BINS=video_conference
 
 all: $(BINS)
 
-gst-player:  Main.c Gstreamer-server-video.c Gstreamer-client-video.c
+video_conference:  Main.c Gstreamer-server-video.c Gstreamer-client-video.c Gstreamer-client-audio.c Gstreamer-server-audio.c
 	 $(CC) $+ $(CFLAGS) $(GTK_CFLAGS) $(GTK_LIBS) $(GST_CFLAGS) $(GST_LIBS) -o $@ -I.
 
 clean:
